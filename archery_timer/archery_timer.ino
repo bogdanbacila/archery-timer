@@ -48,6 +48,7 @@ int pressedButton = 0;
 bool setModeFlag = 0;
 byte setDigitCount = 0;
 byte setDigitValue = 0;
+byte savedTimeValues[3] = {0, 3, 0};
 
 // Define the array of leds
 CRGB leds[NUM_LEDS];
@@ -62,7 +63,7 @@ bool digitTemplate[10][7]=
   },
   { //1
     0, 1, 0, 0, 0, 0, 1
-  },
+  }, 
   { //2
     1, 1, 1, 0, 1, 1, 0
   },  
@@ -131,7 +132,7 @@ void loop() {
       Serial.println("ButtonA"); 
       switch(toggleA){
         case 0:
-          startCountdown(30);
+          startCountdown(savedTimeValues[0]*60+savedTimeValues[1]*10+savedTimeValues[2]);
           break;
         case 1:
           stopCountdown();
@@ -165,10 +166,10 @@ void loop() {
       if (setModeFlag){
         if (setDigitValue == 9){
           setDigitValue = 0;
-          writeDigit(setDigitValue, CRGB::Purple, setDigitCount);
+          writeDigit(setDigitValue, CRGB::Blue, setDigitCount);
         }else{
           setDigitValue++; 
-          writeDigit(setDigitValue, CRGB::Purple, setDigitCount);  
+          writeDigit(setDigitValue, CRGB::Blue, setDigitCount);  
         }
         
       }
@@ -184,13 +185,16 @@ void loop() {
 //        Serial.println(setDigitCount);
         if (setDigitCount == 2){
           
+          savedTimeValues[setDigitCount] = setDigitValue;
           setDigitCount = 0;
-          writeDigit(0, CRGB::Purple, setDigitCount);
+          writeDigit(0, CRGB::Blue, setDigitCount);
           saveTimer();
         }else{
-          setDigitCount++;
           
-          writeDigit(0, CRGB::Purple, setDigitCount);
+          savedTimeValues[setDigitCount] = setDigitValue;
+          setDigitCount++;
+          setDigitValue = 0;
+          writeDigit(0, CRGB::Blue, setDigitCount);
         }
 
           
@@ -212,7 +216,11 @@ void loop() {
 
 
 void setTimerMode(){
-  setAll(0, CRGB::Blue);
+  setAll(0, CRGB::Purple);
+  writeDigit(0, CRGB::Blue, 0);
+
+  setDigitValue = 0;
+  setDigitCount = 0;
   setModeFlag = 1; 
 }
 
@@ -252,7 +260,7 @@ void clearAll(){
 CRGB pickColour(int seconds){
   if (seconds > 20){
     return CRGB::Green;
-  }else if ((seconds >= 20) && (seconds != 0)){
+  }else if ((seconds <= 20) && (seconds != 0)){
     return CRGB::Orange;
   }else if (seconds == 0){
     return CRGB::Red;  
