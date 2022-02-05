@@ -49,6 +49,8 @@ bool setModeFlag = 0;
 byte setDigitCount = 0;
 byte setDigitValue = 0;
 byte savedTimeValues[3] = {0, 3, 0};
+byte provisionalTimeValues[3] = {0, 0, 0};
+
 
 // Define the array of leds
 CRGB leds[NUM_LEDS];
@@ -185,13 +187,13 @@ void loop() {
 //        Serial.println(setDigitCount);
         if (setDigitCount == 2){
           
-          savedTimeValues[setDigitCount] = setDigitValue;
+          provisionalTimeValues[setDigitCount] = setDigitValue;
           setDigitCount = 0;
           writeDigit(0, CRGB::Blue, setDigitCount);
           saveTimer();
         }else{
           
-          savedTimeValues[setDigitCount] = setDigitValue;
+          provisionalTimeValues[setDigitCount] = setDigitValue;
           setDigitCount++;
           setDigitValue = 0;
           writeDigit(0, CRGB::Blue, setDigitCount);
@@ -226,6 +228,19 @@ void setTimerMode(){
 
 void saveTimer(){
   setAll(0, CRGB::Red);
+  
+  bool setTimeZero = true;
+  for (byte i = 0; i <= 2; i++){
+    if (provisionalTimeValues[i] != 0){
+      setTimeZero = false;
+      break;
+    }
+    
+  }
+
+  if (!setTimeZero) {
+    memcpy(savedTimeValues, provisionalTimeValues, sizeof savedTimeValues);
+  }
   setModeFlag = 0; 
 }
 
