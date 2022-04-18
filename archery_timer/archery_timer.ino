@@ -17,10 +17,14 @@
 // For led chips like Neopixels, which have a data line, ground, and power, you just
 // need to define DATA_PIN.  For led chipsets that are SPI based (four wires - data, clock,
 // ground, and power), like the LPD8806 define both DATA_PIN and CLOCK_PIN
-#define DATA_PIN 5
+#define DATA_PIN_TIMER 5
+#define DATA_PIN_DETAIL 6
+
 
 // How many leds in your strip?
-#define NUM_LEDS 63
+#define NUM_LEDS_TIMER 63
+#define NUM_LEDS_DETAIL 37
+
 #define BRIGHTNESS 20 // temporary keep brightness down for testing. Increase after sprting power supply! 
 
 byte ledsInSegment = 3;
@@ -48,12 +52,15 @@ int pressedButton = 0;
 bool setModeFlag = 0;
 byte setDigitCount = 0;
 byte setDigitValue = 0;
+byte setDetail = 0;
+
 byte savedTimeValues[3] = {0, 3, 0};
 byte provisionalTimeValues[3] = {0, 0, 0};
 
 
-// Define the array of leds
-CRGB leds[NUM_LEDS];
+// Define the arrays of leds
+CRGB timerLeds[NUM_LEDS_TIMER];
+CRGB detailLeds[NUM_LEDS_DETAIL];
 CRGB cols[] = {CRGB::Green, CRGB::Orange, CRGB::Red};
 
 RCSwitch mySwitch = RCSwitch();
@@ -92,6 +99,22 @@ bool digitTemplate[10][7]=
   },
 };
 
+bool detailTemplate[3][NUM_LEDS_DETAIL]=
+{
+  { //AB
+    0, 1, 1, 0, 0, 0, 0, 0, 1, 1,  0,  1,  1,  0,  0,  0,  0,  0,  1,  1,  0,  1,  1,  0,  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1,  1
+ // 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36
+  },
+  { //CD
+    0, 1, 1, 0, 0, 0, 0, 0, 1, 1,  0,  0,  0,  0,  0,  1,  1,  0,  1,  1,  0,  1,  1,  1,  1,  0,  0,  1,  1,  0,  0,  0,  0,  1,  1,  1,  1
+ // 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36
+  }, 
+  { //EF
+    0, 1, 1, 0, 1, 1, 0, 0, 1, 1,  0,  1,  1,  0,  0,  1,  1,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,  0,  0,  0,  0,  1,  1,  1,  1
+ // 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36
+  },  
+};
+
 
 
 void setup() { 
@@ -104,7 +127,9 @@ delay(1000);
   Serial.println(TIMER_INTERRUPT_VERSION);
   Serial.print(F("CPU Frequency = ")); Serial.print(F_CPU / 1000000); Serial.println(F(" MHz"));
   
-  FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS); 
+  FastLED.addLeds<WS2812B, DATA_PIN_TIMER, GRB>(timerLeds, NUM_LEDS_TIMER); 
+  FastLED.addLeds<WS2812B, DATA_PIN_DETAIL, GRB>(detailLeds, NUM_LEDS_DETAIL); 
+
   FastLED.setBrightness(BRIGHTNESS);
  	
   clearAll();
@@ -173,8 +198,15 @@ void loop() {
           setDigitValue++; 
           writeDigit(setDigitValue, CRGB::Blue, setDigitCount);  
         }
-        
-      }
+      }else{
+        if (setDetail == 2){
+          setDetail = 0;
+          writeDetail(setDetail, CRGB::Blue);
+        }else{
+          setDetail++; 
+          writeDetail(setDetail, CRGB::Blue); 
+        }
+      } 
       prevMsC = millis();
     }else prevMsC = millis();
     
@@ -248,7 +280,14 @@ void saveTimer(){
 
 void writeDigit(byte number, CRGB colour, byte digit){
   for (byte i = 0; i < ledsInDigit ; i++){      
-    leds[i+digit*ledsInDigit] = (digitTemplate[number][(i/ledsInSegment)]) ? colour : CRGB::Black;
+    timerLeds[i+digit*ledsInDigit] = (digitTemplate[number][(i/ledsInSegment)]) ? colour : CRGB::Black;
+  }
+  FastLED.show();
+}
+
+void writeDetail(byte number, CRGB colour){
+  for (byte i = 0; i < NUM_LEDS_DETAIL ; i++){      
+    detailLeds[i] = (detailTemplate[number][i]) ? colour : CRGB::Black;
   }
   FastLED.show();
 }
@@ -261,7 +300,7 @@ void setAll(byte number, CRGB colour){
 
 void clearDigit(byte digit){
   for (byte i = 0; i < ledsInDigit ; i++){      
-      leds[i+digit*ledsInDigit] =  CRGB::Black;
+      timerLeds[i+digit*ledsInDigit] =  CRGB::Black;
   }
   FastLED.show();
 }
